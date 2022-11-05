@@ -1,0 +1,132 @@
+diff --git a/node_modules/routing-controllers/cjs/driver/express/ExpressDriver.js b/node_modules/routing-controllers/cjs/driver/express/ExpressDriver.js
+index d7195e0..3c6e23b 100644
+--- a/node_modules/routing-controllers/cjs/driver/express/ExpressDriver.js
++++ b/node_modules/routing-controllers/cjs/driver/express/ExpressDriver.js
+@@ -95,8 +95,26 @@ class ExpressDriver extends BaseDriver_1.BaseDriver {
+                 defaultMiddlewares.push(this.loadBodyParser().text(actionMetadata.bodyExtraOptions));
+             }
+         }
++        if (actionMetadata.isFileUsed || actionMetadata.isFilesUsed) {
++            const multer = this.loadMulter();
++            actionMetadata.params
++                .filter(param => param.type === 'file')
++                .forEach(param => {
++                defaultMiddlewares.push(multer(param.extraOptions).single(param.name));
++            });
++            actionMetadata.params
++                .filter(param => param.type === 'files')
++                .forEach(param => {
++                defaultMiddlewares.push(multer(param.extraOptions).array(param.name));
++            });
++        }
++        // user used middlewares
++        const uses = [...actionMetadata.controllerMetadata.uses, ...actionMetadata.uses];
++        const beforeMiddlewares = this.prepareMiddlewares(uses.filter(use => !use.afterAction));
++        const afterMiddlewares = this.prepareMiddlewares(uses.filter(use => use.afterAction));
++
+         if (actionMetadata.isAuthorizedUsed) {
+-            defaultMiddlewares.push((request, response, next) => {
++            beforeMiddlewares.push((request, response, next) => {
+                 if (!this.authorizationChecker)
+                     throw new AuthorizationCheckerNotDefinedError_1.AuthorizationCheckerNotDefinedError();
+                 const action = { request, response, next };
+@@ -127,23 +145,7 @@ class ExpressDriver extends BaseDriver_1.BaseDriver {
+                 }
+             });
+         }
+-        if (actionMetadata.isFileUsed || actionMetadata.isFilesUsed) {
+-            const multer = this.loadMulter();
+-            actionMetadata.params
+-                .filter(param => param.type === 'file')
+-                .forEach(param => {
+-                defaultMiddlewares.push(multer(param.extraOptions).single(param.name));
+-            });
+-            actionMetadata.params
+-                .filter(param => param.type === 'files')
+-                .forEach(param => {
+-                defaultMiddlewares.push(multer(param.extraOptions).array(param.name));
+-            });
+-        }
+-        // user used middlewares
+-        const uses = [...actionMetadata.controllerMetadata.uses, ...actionMetadata.uses];
+-        const beforeMiddlewares = this.prepareMiddlewares(uses.filter(use => !use.afterAction));
+-        const afterMiddlewares = this.prepareMiddlewares(uses.filter(use => use.afterAction));
++
+         // prepare route and route handler function
+         const route = ActionMetadata_1.ActionMetadata.appendBaseRoute(this.routePrefix, actionMetadata.fullRoute);
+         const routeHandler = function routeHandler(request, response, next) {
+@@ -164,7 +166,7 @@ class ExpressDriver extends BaseDriver_1.BaseDriver {
+             }
+         };
+         // finally register action in express
+-        this.express[actionMetadata.type.toLowerCase()](...[route, routeGuard, ...beforeMiddlewares, ...defaultMiddlewares, routeHandler, ...afterMiddlewares]);
++        this.express[actionMetadata.type.toLowerCase()](...[route, routeGuard, ...defaultMiddlewares, ...beforeMiddlewares, routeHandler, ...afterMiddlewares]);
+     }
+     /**
+      * Registers all routes in the framework.
+diff --git a/node_modules/routing-controllers/esm2015/driver/express/ExpressDriver.js b/node_modules/routing-controllers/esm2015/driver/express/ExpressDriver.js
+index f50f037..0dee79e 100644
+--- a/node_modules/routing-controllers/esm2015/driver/express/ExpressDriver.js
++++ b/node_modules/routing-controllers/esm2015/driver/express/ExpressDriver.js
+@@ -92,8 +92,26 @@ export class ExpressDriver extends BaseDriver {
+                 defaultMiddlewares.push(this.loadBodyParser().text(actionMetadata.bodyExtraOptions));
+             }
+         }
++        if (actionMetadata.isFileUsed || actionMetadata.isFilesUsed) {
++            const multer = this.loadMulter();
++            actionMetadata.params
++                .filter(param => param.type === 'file')
++                .forEach(param => {
++                defaultMiddlewares.push(multer(param.extraOptions).single(param.name));
++            });
++            actionMetadata.params
++                .filter(param => param.type === 'files')
++                .forEach(param => {
++                defaultMiddlewares.push(multer(param.extraOptions).array(param.name));
++            });
++        }
++        // user used middlewares
++        const uses = [...actionMetadata.controllerMetadata.uses, ...actionMetadata.uses];
++        const beforeMiddlewares = this.prepareMiddlewares(uses.filter(use => !use.afterAction));
++        const afterMiddlewares = this.prepareMiddlewares(uses.filter(use => use.afterAction));
++
+         if (actionMetadata.isAuthorizedUsed) {
+-            defaultMiddlewares.push((request, response, next) => {
++            beforeMiddlewares.push((request, response, next) => {
+                 if (!this.authorizationChecker)
+                     throw new AuthorizationCheckerNotDefinedError();
+                 const action = { request, response, next };
+@@ -124,23 +142,7 @@ export class ExpressDriver extends BaseDriver {
+                 }
+             });
+         }
+-        if (actionMetadata.isFileUsed || actionMetadata.isFilesUsed) {
+-            const multer = this.loadMulter();
+-            actionMetadata.params
+-                .filter(param => param.type === 'file')
+-                .forEach(param => {
+-                defaultMiddlewares.push(multer(param.extraOptions).single(param.name));
+-            });
+-            actionMetadata.params
+-                .filter(param => param.type === 'files')
+-                .forEach(param => {
+-                defaultMiddlewares.push(multer(param.extraOptions).array(param.name));
+-            });
+-        }
+-        // user used middlewares
+-        const uses = [...actionMetadata.controllerMetadata.uses, ...actionMetadata.uses];
+-        const beforeMiddlewares = this.prepareMiddlewares(uses.filter(use => !use.afterAction));
+-        const afterMiddlewares = this.prepareMiddlewares(uses.filter(use => use.afterAction));
++
+         // prepare route and route handler function
+         const route = ActionMetadata.appendBaseRoute(this.routePrefix, actionMetadata.fullRoute);
+         const routeHandler = function routeHandler(request, response, next) {
+@@ -161,7 +163,7 @@ export class ExpressDriver extends BaseDriver {
+             }
+         };
+         // finally register action in express
+-        this.express[actionMetadata.type.toLowerCase()](...[route, routeGuard, ...beforeMiddlewares, ...defaultMiddlewares, routeHandler, ...afterMiddlewares]);
++        this.express[actionMetadata.type.toLowerCase()](...[route, routeGuard, ...defaultMiddlewares, ...beforeMiddlewares, routeHandler, ...afterMiddlewares]);
+     }
+     /**
+      * Registers all routes in the framework.
